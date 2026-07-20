@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+/// Usuário da aplicação
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         Role     @default(USER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  loginLogs     LoginLog[]
+}
+
+/// Refresh tokens ativos/revogados de cada usuário.
+/// Nunca guardamos o token em texto puro — apenas o hash (SHA-256) dele.
+model RefreshToken {
+  id                  String    @id @default(uuid())
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String
+  tokenHash           String    @unique
+  expiresAt           DateTime
+  revokedAt           DateTime?
+  replacedByTokenHash String?
+  createdByIp         String?
+  createdAt           DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Histórico de tentativas de login (sucesso e falha), para auditoria/segurança.
+model LoginLog {
+  id             String   @id @default(uuid())
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId         String?
+  emailAttempted String
+  success        Boolean
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  @@index([emailAttempted])
+  @@index([userId])
+}
