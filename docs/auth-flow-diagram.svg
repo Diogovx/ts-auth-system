@@ -1,0 +1,66 @@
+<svg viewBox="0 0 920 560" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+  <rect width="920" height="560" fill="#0f172a"/>
+  <text x="460" y="35" fill="#f8fafc" font-size="20" font-weight="bold" text-anchor="middle">Fluxo de autenticação — JWT + Refresh Token</text>
+
+  <!-- Actors -->
+  <text x="120" y="70" fill="#38bdf8" font-size="14" font-weight="bold" text-anchor="middle">Cliente</text>
+  <text x="460" y="70" fill="#a78bfa" font-size="14" font-weight="bold" text-anchor="middle">API (Express)</text>
+  <text x="800" y="70" fill="#34d399" font-size="14" font-weight="bold" text-anchor="middle">PostgreSQL</text>
+
+  <line x1="120" y1="80" x2="120" y2="520" stroke="#334155" stroke-width="2"/>
+  <line x1="460" y1="80" x2="460" y2="520" stroke="#334155" stroke-width="2"/>
+  <line x1="800" y1="80" x2="800" y2="520" stroke="#334155" stroke-width="2"/>
+
+  <!-- 1. Login -->
+  <line x1="120" y1="110" x2="460" y2="110" stroke="#f8fafc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="290" y="103" fill="#e2e8f0" font-size="11" text-anchor="middle">POST /api/auth/login {email, password}</text>
+
+  <line x1="460" y1="130" x2="800" y2="130" stroke="#f8fafc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="630" y="123" fill="#e2e8f0" font-size="11" text-anchor="middle">verifica hash (argon2) + grava LoginLog</text>
+
+  <line x1="460" y1="150" x2="800" y2="150" stroke="#f8fafc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="630" y="163" fill="#e2e8f0" font-size="11" text-anchor="middle">grava RefreshToken (hash SHA-256)</text>
+
+  <line x1="460" y1="180" x2="120" y2="180" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="290" y="173" fill="#34d399" font-size="11" text-anchor="middle">200 OK: { accessToken } + Set-Cookie refreshToken (httpOnly)</text>
+
+  <!-- 2. Authenticated request -->
+  <rect x="60" y="210" width="800" height="2" fill="#1e293b"/>
+  <line x1="120" y1="240" x2="460" y2="240" stroke="#f8fafc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="290" y="233" fill="#e2e8f0" font-size="11" text-anchor="middle">GET /api/users/me — Header: Authorization: Bearer accessToken</text>
+
+  <line x1="460" y1="260" x2="120" y2="260" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="290" y="253" fill="#34d399" font-size="11" text-anchor="middle">200 OK — middleware "authenticate" validou o JWT localmente (sem ir ao banco)</text>
+
+  <!-- 3. Access token expira -->
+  <rect x="60" y="290" width="800" height="2" fill="#1e293b"/>
+  <text x="130" y="315" fill="#fbbf24" font-size="12" font-weight="bold">⏱ accessToken expira em 15min...</text>
+
+  <line x1="120" y1="340" x2="460" y2="340" stroke="#f8fafc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="290" y="333" fill="#e2e8f0" font-size="11" text-anchor="middle">POST /api/auth/refresh — cookie refreshToken enviado automaticamente</text>
+
+  <line x1="460" y1="360" x2="800" y2="360" stroke="#f8fafc" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="630" y="353" fill="#e2e8f0" font-size="11" text-anchor="middle">valida hash · confere expiresAt/revokedAt</text>
+
+  <line x1="460" y1="380" x2="800" y2="380" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="630" y="393" fill="#fbbf24" font-size="11" text-anchor="middle">ROTAÇÃO: revoga token antigo + cria um novo (transação)</text>
+
+  <line x1="460" y1="410" x2="120" y2="410" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="290" y="403" fill="#34d399" font-size="11" text-anchor="middle">200 OK: novo accessToken + novo cookie refreshToken</text>
+
+  <!-- 4. Reuse detection -->
+  <rect x="60" y="430" width="800" height="2" fill="#1e293b"/>
+  <text x="130" y="455" fill="#f87171" font-size="12" font-weight="bold">🚨 Se o refreshToken antigo (já revogado) for reusado:</text>
+  <line x1="120" y1="475" x2="460" y2="475" stroke="#f87171" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="290" y="468" fill="#e2e8f0" font-size="11" text-anchor="middle">POST /api/auth/refresh com token já revogado</text>
+  <line x1="460" y1="495" x2="800" y2="495" stroke="#f87171" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="630" y="488" fill="#f87171" font-size="11" text-anchor="middle">revoga TODOS os refresh tokens do usuário (possível roubo)</text>
+  <line x1="460" y1="515" x2="120" y2="515" stroke="#f87171" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="290" y="533" fill="#f87171" font-size="11" text-anchor="middle">401 — todas as sessões do usuário são encerradas</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#f8fafc"/>
+    </marker>
+  </defs>
+</svg>
